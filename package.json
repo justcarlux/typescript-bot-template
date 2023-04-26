@@ -1,0 +1,27 @@
+{
+    "name": "typescript-bot-template",
+    "version": "1.0.0",
+    "description": "Discord Bot full template made in TypeScript.",
+    "main": "index.ts",
+    "scripts": {
+        "build": "npx rimraf dist && npx tsc",
+        "start:dev": "npx ts-node src/index.ts",
+        "start:build": "node --no-warnings dist/src/index.js"
+    },
+    "keywords": [
+        "discord",
+        "bot"
+    ],
+    "author": "Kxth_",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^18.11.18",
+        "rimraf": "^3.0.2",
+        "ts-node": "^10.9.1",
+        "typescript": "^4.9.4"
+    },
+    "dependencies": {
+        "discord.js": "^14.9.0",
+        "dotenv": "^16.0.3"
+    }
+}
