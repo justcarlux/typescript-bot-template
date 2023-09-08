@@ -15,7 +15,7 @@ export default new Command({
         await client.load({ logging: true });
         client.loaded = true;
 
-        // Switching the value of 'client.loaded' is done here so the bot doesn't tries to do anything while it is reloading
+        // Switching the value of 'client.loaded' is done here so the bot doesn't try to do anything while it is reloading
 
         console.log("Bot reloaded!")
 

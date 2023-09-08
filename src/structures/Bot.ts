@@ -11,6 +11,7 @@ import Event from "./Event";
 import Menu from "./Menu";
 import SlashCommand from "./SlashCommand";
 import SlashCommandSubCommand from "./SlashCommandSubCommand";
+import Modal from "./Modal";
 
 export interface SimpleMessagePayload {
     content?: string,
@@ -31,7 +32,8 @@ class Bot extends Client {
         subcommands: new Collection<string, SlashCommandSubCommand>(),
         autocompletions: new Collection<string, Autocompletion>(),
         buttons: new Collection<string, Button>(),
-        menus: new Collection<string, Menu>()
+        menus: new Collection<string, Menu>(),
+        modals: new Collection<string, Modal>()
     }
     public owners: User[] = [];
     public startedAt: number = 0;
@@ -65,12 +67,13 @@ class Bot extends Client {
 
         this.removeAllListeners();
 
-        this.commands = await this.loadModules("commands") as Collection<string, Command>;
-        this.interactions.commands = await this.loadModules("interactions/commands") as Collection<string, SlashCommand>;
-        this.interactions.subcommands = await this.loadModules("interactions/subcommands") as Collection<string, SlashCommandSubCommand>;
-        this.interactions.autocompletions = await this.loadModules("interactions/autocompletions") as Collection<string, Autocompletion>;
-        this.interactions.buttons = await this.loadModules("interactions/buttons") as Collection<string, Button>;
-        this.interactions.menus = await this.loadModules("interactions/menus") as Collection<string, Menu>;
+        this.commands = await this.loadModules<Command>("commands");
+        this.interactions.commands = await this.loadModules<SlashCommand>("interactions/commands");
+        this.interactions.subcommands = await this.loadModules<SlashCommandSubCommand>("interactions/subcommands");
+        this.interactions.autocompletions = await this.loadModules<Autocompletion>("interactions/autocompletions");
+        this.interactions.buttons = await this.loadModules<Button>("interactions/buttons");
+        this.interactions.menus = await this.loadModules<Menu>("interactions/menus");
+        this.interactions.modals = await this.loadModules<Modal>("interactions/modals");
 
         const botEvents = await this.loadEvents("bot");
         const restEvents = await this.loadEvents("rest");
@@ -86,6 +89,7 @@ class Bot extends Client {
             console.log(`Loaded slash commands autocompletions: ${this.interactions.autocompletions.map(e => e.name).join(", ") || "None"}`);
             console.log(`Loaded button interactions: ${this.interactions.buttons.map(e => e.name).join(", ") || "None"}`);
             console.log(`Loaded menu interactions: ${this.interactions.menus.map(e => e.name).join(", ") || "None"}`);
+            console.log(`Loaded modals: ${this.interactions.modals.map(e => e.name).join(", ") || "None"}`);
             console.log(`Loaded events: ${botEvents.map(e => e.name).join(", ") || "None"}`);
             console.log(`Loaded Discord API REST events: ${restEvents.map(e => e.name).join(", ") || "None"}`);
             console.log(`Loaded owners: ${this.owners.map(e => e.tag).join(", ") || "None"}`);
@@ -102,14 +106,15 @@ class Bot extends Client {
         });
     }
 
-    async loadModules(
+    public async loadModules<ModuleType extends Command | SlashCommand | SlashCommandSubCommand | Autocompletion | Button | Menu | Modal>(
         where: "commands" |
         "interactions/commands" |
         "interactions/subcommands" |
-        "interactions/buttons" |
         "interactions/autocompletions" |
-        "interactions/menus"
-    ): Promise<Collection<any, any>> {
+        "interactions/buttons" |
+        "interactions/menus" |
+        "interactions/modals"
+    ): Promise<Collection<string, ModuleType>> {
 
         let elements: Dirent[] = [];
         const collection = new Collection<any, any>();

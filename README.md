@@ -3,14 +3,14 @@ Basic Discord.js bot template made in TypeScript.
 
 ## 🎉 Features
 - Code properly made using Object Oriented Programming.
-- Text-based Commands handler.
-- Slash Commands, Sub-Commands and Autocompletions Interactions handler.
-- Button Interactions handler.
-- Menu Interactions handler.
+- Text-based Commands handler (subfolders supported).
+- Slash Commands, Sub-Commands and Autocompletions Interactions handler (subfolders supported).
+- Button Interactions handler (subfolders supported).
+- Menu Interactions handler (subfolders supported).
 - Configuration loader.
 - Exception catcher (informally known as "anti-crash").
 - Built-in reload command.
-- Examples about everything above.
+- Examples of everything above.
 
 ## 💻 Running
 

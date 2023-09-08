@@ -1,7 +1,7 @@
 {
     "name": "typescript-bot-template",
     "version": "1.0.0",
-    "description": "Discord Bot full template made in TypeScript.",
+    "description": "Discord Bot template made in TypeScript.",
     "main": "index.ts",
     "scripts": {
         "build": "npx rimraf dist && npx tsc",

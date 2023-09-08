@@ -3,6 +3,7 @@ import slashCommandHandler from "../../handlers/slash-commands";
 import autocompleteHandler from "../../handlers/autocompletions";
 import buttonHandler from "../../handlers/buttons";
 import menuHandler from "../../handlers/menus";
+import modalHandler from "../../handlers/modals";
 import Event from "../../structures/Event";
 
 export default new Event({
@@ -13,5 +14,6 @@ export default new Event({
         if (interaction.isAutocomplete()) autocompleteHandler(client, interaction);
         if (interaction.isButton()) buttonHandler(client, interaction);
         if (interaction.isAnySelectMenu()) menuHandler(client, interaction);
+        if (interaction.isModalSubmit()) modalHandler(client, interaction);
     }
 })

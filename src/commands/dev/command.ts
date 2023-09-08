@@ -30,10 +30,18 @@ export default new Command({
             ])
         )
 
+        const row3 = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+            .setCustomId("modal")
+            .setLabel("Modal")
+            .setStyle(ButtonStyle.Primary)
+        )
+
         return await message.reply({
             content: `Test command`,
             embeds: [embed],
-            components: [row1, row2]
+            components: [row1, row2, row3]
         } as any)
 
     }
