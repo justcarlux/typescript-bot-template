@@ -5,17 +5,19 @@
     "main": "index.ts",
     "scripts": {
         "build": "npx rimraf dist && npx tsc",
-        "start:dev": "npx ts-node src/index.ts",
+        "start:dev": "npx ts-node --files src/index.ts",
+        "start:watch": "npx nodemon --files src/index.ts",
         "start:build": "node --no-warnings dist/src/index.js"
     },
     "keywords": [
         "discord",
         "bot"
     ],
-    "author": "Kxth_",
+    "author": "justcarlux",
     "license": "ISC",
     "devDependencies": {
-        "@types/node": "^18.11.18",
+        "@types/node": "^20.11.17",
+        "nodemon": "^3.0.3",
         "rimraf": "^3.0.2",
         "ts-node": "^10.9.1",
         "typescript": "^4.9.4"

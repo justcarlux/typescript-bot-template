@@ -1,13 +1,15 @@
 import { SlashCommandSubcommandBuilder } from "discord.js";
-import SlashCommandSubCommand from "../../structures/SlashCommandSubCommand";
+import SlashCommandSubCommand from "../../../structures/modules/interactions/SlashCommandSubCommand";
 
 const data = new SlashCommandSubcommandBuilder()
-.setName("subcommand")
+.setName("subcommand1")
 .setDescription("Subcommand of a command")
 
 export default new SlashCommandSubCommand({
     data,
-    parent: "command2",
+    parent: {
+        command: "command2"
+    },
     async run(client, interaction) {
         return await interaction.reply({
             content: "Subcommand",

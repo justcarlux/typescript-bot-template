@@ -1,4 +1,4 @@
-import Modal from "../../structures/Modal";
+import Modal from "../../structures/modules/interactions/Modal";
 
 export default new Modal({
     name: "modal",
