@@ -1,4 +1,4 @@
-import SelectMenu from "../../structures/Menu";
+import SelectMenu from "../../structures/modules/interactions/Menu";
 
 export default new SelectMenu({
     name: "menu",

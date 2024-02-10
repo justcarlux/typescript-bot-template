@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionChoiceData } from "discord.js";
-import Autocompletion from "../../structures/Autocompletion";
+import Autocompletion from "../../structures/modules/interactions/Autocompletion";
 
 export default new Autocompletion({
     name: "autocompletion",

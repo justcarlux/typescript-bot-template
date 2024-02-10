@@ -1,16 +1,16 @@
 import path from "node:path";
-import config from "../../config";
 import uncacheModule from "./uncache-module";
+import { IConfiguration } from "../structures/IConfiguration";
 
 const filePath = process.argv.join("").includes("ts-node") ?
 path.join(process.cwd(), "config") : 
 path.join(process.cwd(), "dist", "config");
 
-let data: typeof config | null = null;
+let data: IConfiguration | null = null;
 
-export async function load() {
+export async function loadConfig() {
     uncacheModule(filePath);
-    data = (await import(filePath)).default as typeof config;
+    data = (await import(filePath)).default;
 }
 
 export function getConfig() {

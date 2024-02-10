@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
-import Button from "../../structures/Button";
+import Button from "../../structures/modules/interactions/Button";
 
 export default new Button({
     name: "modal",

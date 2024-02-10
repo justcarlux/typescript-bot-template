@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import SlashCommand from "../../structures/SlashCommand";
+import SlashCommand from "../../structures/modules/interactions/SlashCommand";
 
 const data = new SlashCommandBuilder()
 .addStringOption(option =>

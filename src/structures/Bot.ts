@@ -1,28 +1,18 @@
-import { ActionRowBuilder, Client, Collection, EmbedBuilder, GatewayIntentBits, Partials, Routes, User } from "discord.js";
-import { Dirent } from "node:fs";
-import { readdir } from "node:fs/promises";
+import { ApplicationCommandOptionType, Client, Collection, GatewayIntentBits, Guild, GuildBasedChannel, Partials, RESTPostAPIApplicationCommandsJSONBody, RESTPostAPIApplicationGuildCommandsJSONBody, Routes, User } from "discord.js";
 import * as path from "node:path";
 import { getConfig } from "../utils/configuration";
+import { DirectoryWalkerEntry, directoryWalker } from "../utils/directory-walker";
+import logger from "../utils/logger";
 import uncacheModule from "../utils/uncache-module";
-import Autocompletion from "./Autocompletion";
-import Button from "./Button";
-import Command from "./Command";
-import Event from "./Event";
-import Menu from "./Menu";
-import SlashCommand from "./SlashCommand";
-import SlashCommandSubCommand from "./SlashCommandSubCommand";
-import Modal from "./Modal";
-
-export interface SimpleMessagePayload {
-    content?: string,
-    embeds?: EmbedBuilder[],
-    components?: ActionRowBuilder[],
-    ephemeral?: boolean
-}
-
-interface LoadBotOptions {
-    logging: boolean
-}
+import Command from "./modules/Command";
+import ClientEvent from "./modules/events/ClientEvent";
+import RestEvent from "./modules/events/RestEvent";
+import Autocompletion from "./modules/interactions/Autocompletion";
+import Button from "./modules/interactions/Button";
+import Menu from "./modules/interactions/Menu";
+import Modal from "./modules/interactions/Modal";
+import SlashCommand from "./modules/interactions/SlashCommand";
+import SlashCommandSubCommand from "./modules/interactions/SlashCommandSubCommand";
 
 class Bot extends Client {
 
@@ -35,8 +25,11 @@ class Bot extends Client {
         menus: new Collection<string, Menu>(),
         modals: new Collection<string, Modal>()
     }
-    public owners: User[] = [];
+    public events: (ClientEvent<any> | RestEvent<any>)[] = [];
+    public developers: User[] = [];
+    public createdAt;
     public startedAt: number = 0;
+    public developmentMode!: { guild: Guild, channels: GuildBasedChannel[], enabled: boolean };
 
     private _loaded: boolean = false;
 
@@ -49,126 +42,141 @@ class Bot extends Client {
         this._loaded = x;
     }
 
-    constructor() {
+    public constructor() {
         super({
             intents: [
                 GatewayIntentBits.Guilds,
-                GatewayIntentBits.GuildMembers,
                 GatewayIntentBits.MessageContent,
-                GatewayIntentBits.GuildMessages
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.GuildMessageReactions,
+                GatewayIntentBits.GuildEmojisAndStickers,
+                GatewayIntentBits.DirectMessages,
             ],
-            partials: [Partials.Message, Partials.Reaction],
-            allowedMentions: { repliedUser: false, parse: ['users'] }
+            partials: [Partials.Message, Partials.Reaction, Partials.Channel],
+            allowedMentions: { repliedUser: false, parse: ['users'] },
         });
-        this.rest.setToken(process.env.BOT_TOKEN ?? "")
+        this.createdAt = Date.now();
+        this.rest.setToken(process.env.BOT_TOKEN);
     }
 
-    async load(options: LoadBotOptions) {
+    public async load() {
 
         this.removeAllListeners();
-
-        this.commands = await this.loadModules<Command>("commands");
-        this.interactions.commands = await this.loadModules<SlashCommand>("interactions/commands");
-        this.interactions.subcommands = await this.loadModules<SlashCommandSubCommand>("interactions/subcommands");
-        this.interactions.autocompletions = await this.loadModules<Autocompletion>("interactions/autocompletions");
-        this.interactions.buttons = await this.loadModules<Button>("interactions/buttons");
-        this.interactions.menus = await this.loadModules<Menu>("interactions/menus");
-        this.interactions.modals = await this.loadModules<Modal>("interactions/modals");
-
-        const botEvents = await this.loadEvents("bot");
-        const restEvents = await this.loadEvents("rest");
-
-        this.owners = await Promise.all(
-            getConfig().developers.map(id => this.users.fetch(id))
-        )
-
-        if (options.logging) {
-            console.log(`Loaded commands: ${this.commands.map(e => e.name).join(", ") || "None"}`);
-            console.log(`Loaded slash commands: ${this.interactions.commands.map(e => e.data.name).join(", ") || "None"}`);
-            console.log(`Loaded slash commands subcommands: ${this.interactions.subcommands.map(e => `${e.parent}/${e.data.name}`)}`);
-            console.log(`Loaded slash commands autocompletions: ${this.interactions.autocompletions.map(e => e.name).join(", ") || "None"}`);
-            console.log(`Loaded button interactions: ${this.interactions.buttons.map(e => e.name).join(", ") || "None"}`);
-            console.log(`Loaded menu interactions: ${this.interactions.menus.map(e => e.name).join(", ") || "None"}`);
-            console.log(`Loaded modals: ${this.interactions.modals.map(e => e.name).join(", ") || "None"}`);
-            console.log(`Loaded events: ${botEvents.map(e => e.name).join(", ") || "None"}`);
-            console.log(`Loaded Discord API REST events: ${restEvents.map(e => e.name).join(", ") || "None"}`);
-            console.log(`Loaded owners: ${this.owners.map(e => e.tag).join(", ") || "None"}`);
-        }
+        this.rest.removeAllListeners();
         
-    }
-
-    async start() {
-        this.login(process.env.BOT_TOKEN)
-        .then(() => { this.startedAt = Date.now() })
-        .catch(err => {
-            console.log(`Error when starting client:\n${err.stack ? err.stack : err}`)
-            process.exit();
+        this.commands = await this.loadModules<Command>("commands");
+        logger.run(`Loaded commands: ${this.commands.map(e => e.name).join(", ") || "None"}`, {
+            color: "blue", stringBefore: "\n", category: "Bot"
         });
+
+        this.interactions.commands = await this.loadModules<SlashCommand>("interactions/commands");
+        logger.run(`Loaded slash commands: ${this.interactions.commands.map(e => e.data.name).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+
+        this.interactions.subcommands = await this.loadModules<SlashCommandSubCommand>("interactions/subcommands");
+        logger.run(`Loaded slash commands subcommands: ${this.interactions.subcommands.map(e => `${e.parent.command}${e.parent.group ? `/${e.parent.group}`: ""}/${e.data.name}`).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+
+        this.interactions.autocompletions = await this.loadModules<Autocompletion>("interactions/autocompletions");
+        logger.run(`Loaded slash commands autocompletions: ${this.interactions.autocompletions.map(e => e.name).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+
+        this.interactions.buttons = await this.loadModules<Button>("interactions/buttons");
+        logger.run(`Loaded button interactions: ${this.interactions.buttons.map(e => e.name).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+
+        this.interactions.menus = await this.loadModules<Menu>("interactions/menus");
+        logger.run(`Loaded menu interactions: ${this.interactions.menus.map(e => e.name).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+
+        this.interactions.modals = await this.loadModules<Modal>("interactions/modals");
+        logger.run(`Loaded modal interactions: ${this.interactions.modals.map(e => e.name).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+
+        this.events = await this.loadEvents();
+        logger.run(`Loaded client events: ${this.events.filter(e => e instanceof ClientEvent).map(e => e.name).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+        logger.run(`Loaded Discord API REST events: ${this.events.filter(e => e instanceof RestEvent).map(e => e.name).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+
+        await this.loadDevelopers();        
+        await this.loadDeveloperModeData();
+        await this.updateGlobalCachedSlashCommandsIds();
+
     }
 
-    public async loadModules<ModuleType extends Command | SlashCommand | SlashCommandSubCommand | Autocompletion | Button | Menu | Modal>(
+    public async start() {
+        this.login(process.env.BOT_TOKEN)
+            .then(async () => {
+                this.startedAt = Date.now();
+            })
+            .catch(err => {
+                logger.run(`Error while starting the client:\n${err.stack ? err.stack : err}`, {
+                    color: "red", category: "Fatal"
+                });
+                process.exit();
+            });
+    }
+
+    private async loadModules<ModuleType extends Command | SlashCommand | SlashCommandSubCommand | Autocompletion | Button | Menu | Modal>(
         where: "commands" |
-        "interactions/commands" |
-        "interactions/subcommands" |
-        "interactions/autocompletions" |
-        "interactions/buttons" |
-        "interactions/menus" |
-        "interactions/modals"
+            "interactions/commands" |
+            "interactions/subcommands" |
+            "interactions/autocompletions" |
+            "interactions/buttons" |
+            "interactions/menus" |
+            "interactions/modals"
     ): Promise<Collection<string, ModuleType>> {
 
-        let elements: Dirent[] = [];
         const collection = new Collection<any, any>();
 
+        let elements;
         try {
-            elements = await readdir(path.join(require.main?.path || "", where), { withFileTypes: true });
+            elements = (await directoryWalker(path.join(require.main?.path || "", where)))
+            .filter(e => e.path.endsWith(".ts") || e.path.endsWith(".js"));
         } catch (err) {
             return collection;
         }
 
         for (const index in elements) {
-
             const element = elements[index];
-
-            async function loadFile(file?: string) {
-                const filePath = path.join(require.main?.path || "", where, element.name, file ?? "");
-                uncacheModule(filePath);
-                const module = (await import(filePath)).default;
-                collection.set(module.name ? module.name : module.data.name, module);
-            }
-
-            if (element.isDirectory()) {
-                const files = (await readdir(path.join(require.main?.path || "", where, element.name)))
-                .filter(e => e.endsWith(".ts") || e.endsWith(".js"));
-                for (const index in files) {
-                    await loadFile(files[index]);
-                }
-            } else {
-                await loadFile();
-            }
-
+            if (element.data.isDirectory()) continue;
+            uncacheModule(element.path);
+            const module = (await import(element.path)).default as ModuleType;
+            collection.set((module as any).name ? (module as any).name : (module as any).data.name, module);
         }
 
         return collection;
 
     }
 
-    async loadEvents(where: "bot" | "rest") {
+    private async loadEvents() {
 
-        const events: Event[] = [];
-        let files: string[] = [];
+        const events: (ClientEvent<any> | RestEvent<any>)[] = [];
+        let files: DirectoryWalkerEntry[] = [];
         try {
-            files = (await readdir(path.join(require.main?.path || "", `events`, where)))
-            .filter(e => e.endsWith(".ts") || e.endsWith(".js"));
+            files = (await directoryWalker(path.join(require.main?.path || "", `events`)))
+            .filter(e => e.path.endsWith(".ts") || e.path.endsWith(".js"));
         } catch (err) { return events; }
-        
+
         for (const index in files) {
 
-            const filePath = path.join(require.main?.path || "", `events`, where, files[index]);
-            uncacheModule(filePath);
-            const event: Event = (await import(filePath)).default;
+            const file = files[index];
+            if (file.data.isDirectory()) continue;
+
+            uncacheModule(file.path);
+            const event: (ClientEvent<any> | RestEvent<any>) = (await import(file.path)).default;
             events.push(event);
 
-            if (where === "bot") {
+            if (event instanceof ClientEvent) {
                 if (event.once) {
                     this.once(event.name, (...args) => event.run.apply(null, [this, ...args]));
                 } else {
@@ -178,12 +186,18 @@ class Bot extends Client {
                     });
                 }
             }
-            
-            if (where === "rest") {
+
+            if (event instanceof RestEvent) {
                 if (event.once) {
-                    this.rest.once(event.name, (...args) => event.run.apply(null, [this, ...args]));
+                    this.rest.once(event.name, (...args) => {
+                        if (!this.loaded) return;
+                        event.run.apply(null, [this, ...args]);
+                    });
                 } else {
-                    this.rest.on(event.name, (...args) => event.run.apply(null, [this, ...args]));
+                    this.rest.on(event.name, (...args) => {
+                        if (!this.loaded) return;
+                        event.run.apply(null, [this, ...args]);
+                    });
                 }
             }
 
@@ -193,51 +207,158 @@ class Bot extends Client {
 
     }
 
-    async registerSlashCommandsInGuilds(guilds: string[]) {
+    private async loadDevelopers() {
 
-        if (!this.isReady()) throw new Error("Bot isn't ready yet.");
-        if (!guilds.length) return;
+        const developers = (await Promise.all(
+            getConfig().developers.map(async (id) => {
+                let user: User | null = null;
+                try {
+                    user = await this.users.fetch(id);
+                } catch (err) {}
+                return user;
+            })
+        )).filter((e) => e) as User[];
 
-        const body = this.interactions.commands.map(e => e.data.toJSON());
-        if (!body.length) return;
-
-        for (let index in guilds) {
-            const guildId = guilds[index];
-            const guild = this.guilds.cache.get(guildId);
-            if (!guild) continue;
-            await this.rest.put(Routes.applicationGuildCommands(this.user.id, guild.id), { body });
+        const missingDevelopers = getConfig().developers.filter(e => !developers.some(u => u.id === e));
+        if (missingDevelopers.length) {
+            logger.run(
+                `The following developer user IDs were not found: ${missingDevelopers.join(", ")}`,
+                { color: "red", category: "Fatal" }
+            );
+            logger.run(
+                `Check your config.ts file and make sure you haven't specified any invalid IDs`,
+                { color: "red", category: "Fatal" }
+            );
+            process.exit();
         }
 
+        this.developers = developers;
+
+        logger.run(`Loaded developers: ${this.developers.map(e => e.tag).join(", ") || "None"}`, {
+            color: "blue", category: "Bot"
+        });
+
     }
 
-    async unregisterSlashCommandsInGuilds(guilds: string[]) {
+    private async loadDeveloperModeData() {
 
-        if (!this.isReady()) throw new Error("Bot isn't ready yet.");
-        if (!guilds.length) return;
-
-        for (let index in guilds) {
-            const guildId = guilds[index];
-            const guild = this.guilds.cache.get(guildId);
-            if (!guild) continue;
-            await this.rest.put(Routes.applicationGuildCommands(this.user.id, guild.id), { body: [] });
+        let guild: Guild;
+        try {
+            guild = await this.guilds.fetch(getConfig().developmentMode.guild.id);
+            if (!guild) throw new Error();
+        } catch (err) {
+            logger.run(`Development guild ID not found: ${getConfig().developmentMode.guild.id}`, { color: "red", category: "Fatal" });
+            logger.run(
+                `Check your config.ts file and make sure you haven't specified any invalid IDs`,
+                { color: "red", category: "Fatal" }
+            );
+            process.exit();
         }
 
+        const channels = (await Promise.all(
+            getConfig().developmentMode.channels.map(async (id) => {
+                let channel: GuildBasedChannel | null = null;
+                try {
+                    channel = await guild.channels.fetch(id);
+                } catch (err) {}
+                return channel;
+            })
+        )).filter((e) => e) as GuildBasedChannel[];
+
+        const missingChannels = getConfig().developmentMode.channels.filter(e => !channels.some(c => c.id === e));
+        if (missingChannels.length) {
+            logger.run(
+                `The following developer channel IDs were not found in "${guild.name}" (ID: ${guild.id}): ${missingChannels.join(", ")}`,
+                { color: "red", category: "Fatal" }
+            );
+            logger.run(
+                `Check your config.ts file and make sure you haven't specified any invalid IDs`,
+                { color: "red", category: "Fatal" }
+            );
+            process.exit();
+        }
+
+        this.developmentMode = { enabled: getConfig().developmentMode.enabled, guild, channels };
+
+        logger.run(`Development guild: ${this.developmentMode.guild.name} (ID: ${this.developmentMode.guild.id})`, { color: "blue", ignore: !getConfig().developmentMode.enabled, category: "Bot", stringBefore: "\n" })
+        logger.run(`Development channels:`, { color: "blue", ignore: !getConfig().developmentMode.enabled, category: "Bot" })
+        this.developmentMode.channels.forEach(channel => {
+            logger.run(`#${channel.name} (ID: ${channel.id})`, { color: "blue", ignore: !getConfig().developmentMode.enabled, category: "Bot" })
+        })
+
     }
 
-    async registerGlobalSlashCommands() {
-
-        if (!this.isReady()) throw new Error("Bot isn't ready yet.");
-        const body = this.interactions.commands.map(e => e.data.toJSON());
-        if (!body.length) return;
-        await this.rest.put(Routes.applicationCommands(this.user.id), { body });
-
+    private async refreshGlobalSlashCommands() {
+        if (!this.isReady()) throw new Error("Bot isn't ready yet");
+        const globalSlashCommands = this.interactions.commands
+        .filter(e => !e.developerOnly)
+        .map(e => e.data.toJSON());
+        if (!globalSlashCommands.length) {
+            return logger.run(`Nothing to register\n`, {
+                color: "blue", stringBefore: "\n", ignore: !getConfig().enable.slashCommandsLogs, category: "Global Slash Commands Refresh"
+            });
+        }
+        logger.run(`Registering...`, {
+            color: "blue", stringBefore: "\n", ignore: !getConfig().enable.slashCommandsLogs, category: "Global Slash Commands Refresh"
+        });
+        const data = await this.rest.put(Routes.applicationCommands(this.user.id), { body: globalSlashCommands }) as RESTPostAPIApplicationCommandsJSONBody[];
+        await this.updateGlobalCachedSlashCommandsIds();
+        logger.run(`Succesfully registered ${data.length} of them\n`, {
+            color: "blue", ignore: !getConfig().enable.slashCommandsLogs, category: "Global Slash Commands Refresh"
+        });
     }
 
-    async unregisterGlobalSlashCommands() {
+    private async refreshDeveloperSlashCommands() {
+        if (!this.isReady()) throw new Error("Bot isn't ready yet");
+        const developerSlashCommands = this.interactions.commands
+        .filter(e => e.developerOnly)
+        .map(e => e.data.toJSON());
+        if (!developerSlashCommands.length) {
+            return logger.run(`Nothing to register\n`, {
+                color: "blue", stringBefore: "\n", ignore: !getConfig().enable.slashCommandsLogs, category: "Developer Slash Commands Refresh"
+            });
+        }
+        logger.run(`Registering...`, {
+            color: "blue", stringBefore: "\n", ignore: !getConfig().enable.slashCommandsLogs, category: "Developer Slash Commands Refresh"
+        });
+        const data = await this.rest.put(Routes.applicationGuildCommands(this.user.id, this.developmentMode.guild.id), { body: developerSlashCommands }) as RESTPostAPIApplicationGuildCommandsJSONBody[];
+        logger.run(`Succesfully registered ${data.length} of them in "${this.developmentMode.guild.id}" (ID: ${this.developmentMode.guild.id})`, {
+            color: "blue", ignore: !getConfig().enable.slashCommandsLogs, category: "Developer Slash Commands Refresh"
+        });
+    }
 
-        if (!this.isReady()) throw new Error("Bot isn't ready yet.");
-        await this.rest.put(Routes.applicationCommands(this.user.id), { body: [] });
+    public async refreshSlashCommands() {
+        await this.refreshGlobalSlashCommands();
+        await this.refreshDeveloperSlashCommands();
+    }
 
+    public async updateGlobalCachedSlashCommandsIds() {
+        const registeredCommands = await this.application?.commands.fetch();
+        if (registeredCommands?.size) {
+            registeredCommands.forEach(command => {
+                const cachedCommand = this.interactions.commands.find(e => e.data.name === command.name);
+                if (cachedCommand) cachedCommand.id = command.id;
+                if (command.options.length) {
+                    command.options.forEach(subcommand => {
+                        let cachedSubCommand: SlashCommandSubCommand | undefined;
+                        switch (subcommand.type) {
+                            case ApplicationCommandOptionType.Subcommand:
+                                cachedSubCommand = this.interactions.subcommands.find(e => e.data.name === subcommand.name);
+                                if (cachedSubCommand && cachedCommand) cachedSubCommand.id = cachedCommand.id;
+                                break;
+                        
+                            case ApplicationCommandOptionType.SubcommandGroup:
+                                subcommand.options?.forEach(groupSubcommand => {
+                                    if (groupSubcommand.type !== ApplicationCommandOptionType.Subcommand) return;
+                                    cachedSubCommand = this.interactions.subcommands.find(e => e.data.name === groupSubcommand.name);
+                                    if (cachedSubCommand && cachedCommand) cachedSubCommand.id = cachedCommand.id;
+                                });
+                                break;
+                        }
+                    });
+                }
+            });
+        }
     }
 
 }

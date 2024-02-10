@@ -4,17 +4,19 @@ dotenv.config();
 import Bot from "./structures/Bot";
 const bot = new Bot();
 
-import * as configuration from "./utils/configuration";
-import exceptionCatchers from "./utils/exception-catchers";
+import "./utils/exception-catchers";
+import logger from "./utils/logger";
+import { getConfig, loadConfig } from "./utils/configuration";
 
 (async () => {
 
-    await configuration.load();
-    exceptionCatchers();
+    await loadConfig();
 
-    console.log(configuration.getConfig().developerMode.activated ? `Starting in Developer Mode...` : `Starting...`);
+    logger.run(getConfig().developmentMode.enabled ? `Starting in Developer Mode...` : `Starting...`, {
+        color: "green", category: "Bot"
+    });
 
-    await bot.load({ logging: true });
+    await bot.load();
     await bot.start();
 
 })();
