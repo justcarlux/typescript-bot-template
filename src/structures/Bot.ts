@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, Client, Collection, GatewayIntentBits, Guild, GuildBasedChannel, Partials, RESTPostAPIApplicationCommandsJSONBody, RESTPostAPIApplicationGuildCommandsJSONBody, Routes, User } from "discord.js";
+import { ApplicationCommandOptionType, Client, ClientEvents, Collection, GatewayIntentBits, Guild, GuildBasedChannel, Partials, RESTPostAPIApplicationCommandsJSONBody, RESTPostAPIApplicationGuildCommandsJSONBody, RestEvents, Routes, User } from "discord.js";
 import * as path from "node:path";
 import { getConfig } from "../utils/configuration";
 import { DirectoryWalkerEntry, directoryWalker } from "../utils/directory-walker";
@@ -25,7 +25,7 @@ class Bot extends Client {
         menus: new Collection<string, Menu>(),
         modals: new Collection<string, Modal>()
     }
-    public events: (ClientEvent<any> | RestEvent<any>)[] = [];
+    public events: (ClientEvent<keyof ClientEvents> | RestEvent<keyof RestEvents>)[] = [];
     public developers: User[] = [];
     public createdAt;
     public startedAt: number = 0;
@@ -136,7 +136,7 @@ class Bot extends Client {
             "interactions/modals"
     ): Promise<Collection<string, ModuleType>> {
 
-        const collection = new Collection<any, any>();
+        const collection = new Collection<string, ModuleType>();
 
         let elements;
         try {
@@ -151,7 +151,7 @@ class Bot extends Client {
             if (element.data.isDirectory()) continue;
             uncacheModule(element.path);
             const module = (await import(element.path)).default as ModuleType;
-            collection.set((module as any).name ? (module as any).name : (module as any).data.name, module);
+            collection.set((module as any).name ? (module as any).name as string : (module as any).data.name as string, module);
         }
 
         return collection;
@@ -160,7 +160,8 @@ class Bot extends Client {
 
     private async loadEvents() {
 
-        const events: (ClientEvent<any> | RestEvent<any>)[] = [];
+        const events: (ClientEvent<keyof ClientEvents> | RestEvent<keyof RestEvents>)[] = [];
+        
         let files: DirectoryWalkerEntry[] = [];
         try {
             files = (await directoryWalker(path.join(require.main?.path || "", `events`)))
@@ -173,12 +174,15 @@ class Bot extends Client {
             if (file.data.isDirectory()) continue;
 
             uncacheModule(file.path);
-            const event: (ClientEvent<any> | RestEvent<any>) = (await import(file.path)).default;
+            const event: (ClientEvent<keyof ClientEvents> | RestEvent<keyof RestEvents>) = (await import(file.path)).default;
             events.push(event);
 
             if (event instanceof ClientEvent) {
                 if (event.once) {
-                    this.once(event.name, (...args) => event.run.apply(null, [this, ...args]));
+                    this.once(event.name, (...args) => {
+                        if (event.name !== "ready" && !this.loaded) return;
+                        event.run.apply(null, [this, ...args])
+                    });
                 } else {
                     this.on(event.name, (...args) => {
                         if (!this.loaded) return;

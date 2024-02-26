@@ -1,4 +1,4 @@
-import { ClientEvents, RestEvents } from "discord.js";
+import { RestEvents } from "discord.js";
 import Bot from "../../Bot";
 
 export interface RestEventData <E extends keyof RestEvents>{
