@@ -2,12 +2,13 @@ import { ButtonInteraction, Collection } from "discord.js";
 import Bot from "../structures/Bot";
 import logger from "../utils/logger";
 import { getConfig } from "../utils/configuration";
+import { checkChannelRunnability } from "./util";
 
 const cooldowns = new Collection<string, number>();
 
 export default async (client: Bot, interaction: ButtonInteraction) => {
 
-    if (!client.developmentMode.checkChannelRunnability(interaction.channelId)) return;
+    if (!checkChannelRunnability(interaction.channelId)) return;
     if (interaction.user.bot) return;
     
     const cooldownExpiration = cooldowns.get(interaction.user.id);
