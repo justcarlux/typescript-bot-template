@@ -109,7 +109,6 @@ class Bot extends Client {
 
         await this.loadDevelopers();        
         await this.loadDeveloperModeData();
-        await this.updateGlobalCachedSlashCommandsIds();
 
     }
 

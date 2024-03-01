@@ -11,6 +11,15 @@ export interface SlashCommandSubCommandData {
         /** Parent Subcommand group where this Subcommand belongs to */
         group?: string
     },
+    /** Authorized requirements in order for this Command to work */
+    authorized?: {
+        /** Required role IDs */
+        roles?: string[],
+        /** Required user IDs */
+        users?: string[],
+        /** Guild IDs where this Command will only work */
+        guilds?: string[]
+    },
     /** Slash Command Subcommand Data */
     data: SlashCommandSubcommandBuilder,
     /** Run function */
@@ -23,6 +32,7 @@ export default class SlashCommandSubCommand implements SlashCommandSubCommandDat
     public data;
     public run;
     public parent;
+    public authorized;
     private _id = "";
 
     constructor (data: SlashCommandSubCommandData) {
@@ -30,6 +40,7 @@ export default class SlashCommandSubCommand implements SlashCommandSubCommandDat
         this.parent = data.parent;
         this.data = data.data;
         this.parent = data.parent;
+        this.authorized = data.authorized;
         this.run = data.run;
     }
 

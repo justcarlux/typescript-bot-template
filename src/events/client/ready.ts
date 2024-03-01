@@ -12,6 +12,7 @@ export default new ClientEvent({
         // Place any loading functions here before settings the 'client.loaded' property to true
         // So we guarantee having everything loaded up before the bot starts actually listening to the rest of events :)
 
+        await client.updateGlobalCachedSlashCommandsIds();
         client.loaded = true;
 
         logger.run(`Environment enabled: ${

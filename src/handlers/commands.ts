@@ -1,31 +1,8 @@
-import { GuildMember, Message } from "discord.js";
+import { Message } from "discord.js";
 import Bot from "../structures/Bot";
-import Command from "../structures/modules/Command";
-import logger from "../utils/logger";
 import { getConfig } from "../utils/configuration";
-import { checkChannelRunnability } from "./util";
-
-interface AllowedToRunOptions {
-    member?: GuildMember | null,
-    guildId?: string | null
-}
-
-export function isAllowedToRun(command: Command, options: AllowedToRunOptions) {
-
-    if (getConfig().developers.includes(options.member?.id ?? "")) return true;
-
-    return (
-        (command.authorized?.users ? (
-            options.member ? command.authorized.users?.includes(options.member.id) : false
-        ) : true) &&
-        (command.authorized?.roles ? (
-            options.member ? options.member.roles.cache.some(role => command.authorized?.roles?.includes(role.id)) : false
-        ) : true)
-    ) && (
-        (command.authorized?.guilds ? command.authorized.guilds.includes(options.guildId ?? "") : true)
-    )
-
-}
+import logger from "../utils/logger";
+import { checkChannelRunnability, isAllowedToRun } from "./util";
 
 export default async (client: Bot, message: Message) => {
 
@@ -38,7 +15,7 @@ export default async (client: Bot, message: Message) => {
 
     if (!prefix) return;
 
-    const cmd = args[0].slice(prefix.length);
+    const cmd = (args.shift() as string).slice(prefix.length);
     const command = client.commands.get(cmd) ?? client.commands.find(e => e.aliases.includes(cmd));
 
     if (!command || !isAllowedToRun(command, { member: message.member, guildId: message.guildId })) return;
@@ -47,6 +24,6 @@ export default async (client: Bot, message: Message) => {
         color: "cyan", ignore: !getConfig().enable.commandsLogs, category: "Commands"
     });
 
-    return await command.run(client, message, args, cmd);
+    return await command.run(client, message, args, cmd, prefix);
 
 }

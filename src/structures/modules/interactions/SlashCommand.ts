@@ -6,6 +6,15 @@ export interface SlashCommandData {
     name?: string,
     /** Slash Command data */
     data: SlashCommandBuilder,
+    /** Authorized requirements in order for this Command to work */
+    authorized?: {
+        /** Required role IDs */
+        roles?: string[],
+        /** Required user IDs */
+        users?: string[],
+        /** Guild IDs where this Command will only work */
+        guilds?: string[]
+    },
     /** If this is a Slash Command only for developers */
     developerOnly?: boolean,
     /** Run function */
@@ -16,15 +25,17 @@ export default class SlashCommand implements SlashCommandData {
 
     public name;
     public data;
-    public run;
+    public authorized;
     public developerOnly;
+    public run;
     private _id = "";
 
     constructor (data: SlashCommandData) {
         this.name = data.name;
         this.data = data.data;
-        this.run = data.run;
         this.developerOnly = data.developerOnly ?? false;
+        this.authorized = data.authorized;
+        this.run = data.run;
     }
 
     public get id() {

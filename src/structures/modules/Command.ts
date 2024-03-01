@@ -17,7 +17,7 @@ export interface CommandData {
         guilds?: string[]
     },
     /** Run function */
-    run: (client: Bot, message: Message, args: string[], alias: string) => void
+    run: (client: Bot, message: Message, args: string[], cmd: string, prefix: string) => void
 }
 
 export default class Command implements CommandData {
