@@ -21,17 +21,30 @@ export interface AllowedToRunOptions {
 
 export function isAllowedToRun(command: Command | SlashCommand | SlashCommandSubCommand, options: AllowedToRunOptions) {
 
-    if (getConfig().developers.includes(options.member?.id ?? "")) return true;
+    if (!options.member) return false;
+    if (getConfig().developers.includes(options.member.id)) return true;
 
-    return (
-        (command.authorized?.users ? (
-            options.member ? command.authorized.users?.includes(options.member.id) : false
-        ) : true) &&
-        (command.authorized?.roles ? (
-            options.member ? options.member.roles.cache.some(role => command.authorized?.roles?.includes(role.id)) : false
-        ) : true)
-    ) && (
-        (command.authorized?.guilds ? command.authorized.guilds.includes(options.guildId ?? "") : true)
-    )
+    if (
+        !command.authorized?.users?.length &&
+        !command.authorized?.roles?.length &&
+        !command.authorized?.guilds?.length
+    ) return true;
+
+    if (
+        command.authorized?.users &&
+        command.authorized.users.includes(options.member.id)
+    ) return true;
+
+    if (
+        command.authorized?.roles &&
+        options.member.roles.cache.some(role => command.authorized?.roles?.includes(role.id))
+    ) return true;
+
+    if (
+        command.authorized?.guilds &&
+        command.authorized.guilds.includes(options.guildId ?? "")
+    ) return true;
+
+    return false;
 
 }
