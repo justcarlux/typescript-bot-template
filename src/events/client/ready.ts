@@ -29,7 +29,7 @@ export default new ClientEvent({
             .join(", ") || "None"
         }\n`, { color: "blue", category: "Bot" });
 
-        logger.run(`Started succesfully in ${((Date.now() - client.createdAt) / 1000).toFixed(1)}s (${Date.now() - client.createdAt} ms) as: ${client.user?.tag}\n`, {
+        logger.run(`Started succesfully in ${((Date.now() - client.createdAt) / 1000).toFixed(1)}s (${Date.now() - client.createdAt} ms) as: ${client.user?.tag} (ID: ${client.user?.id})\n`, {
             color: "green", stringBefore: "\n", category: "Bot"
         });
 
