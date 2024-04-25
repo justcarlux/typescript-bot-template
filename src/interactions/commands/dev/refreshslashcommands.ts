@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import SlashCommand from "../../../structures/modules/interactions/SlashCommand";
+import { authorizations } from "../../../utils/constants";
 
 const data = new SlashCommandBuilder()
 .setName("refreshslashcommands")
@@ -7,7 +8,8 @@ const data = new SlashCommandBuilder()
 
 export default new SlashCommand({
     data,
-    developerOnly: true,
+    developer: true,
+    authorization: authorizations.slashCommands.owners,
     async run(client, interaction) {
 
         await interaction.deferReply();
@@ -15,4 +17,4 @@ export default new SlashCommand({
         return await interaction.editReply({ content: "Slash Commands refreshed!" });
 
     }
-})
+});

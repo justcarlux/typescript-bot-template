@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from "discord.js";
 import Bot from "../../Bot";
+import SlashCommandAuthorization from "../authorizations/SlashCommandAuthorization";
 
 export interface SlashCommandSubCommandData {
     /** Custom identifier for the Command to avoid name clashes */
@@ -11,15 +12,8 @@ export interface SlashCommandSubCommandData {
         /** Parent Subcommand group where this Subcommand belongs to */
         group?: string
     },
-    /** Authorized requirements in order for this Command to work */
-    authorized?: {
-        /** Required role IDs */
-        roles?: string[],
-        /** Required user IDs */
-        users?: string[],
-        /** Guild IDs where this Command will only work */
-        guilds?: string[]
-    },
+    /** Authorization check in order for users to be able to run the command */
+    authorization?: SlashCommandAuthorization,
     /** Slash Command Subcommand Data */
     data: SlashCommandSubcommandBuilder,
     /** Run function */
@@ -32,7 +26,7 @@ export default class SlashCommandSubCommand implements SlashCommandSubCommandDat
     public data;
     public run;
     public parent;
-    public authorized;
+    public authorization;
     private _id = "";
 
     constructor (data: SlashCommandSubCommandData) {
@@ -40,7 +34,7 @@ export default class SlashCommandSubCommand implements SlashCommandSubCommandDat
         this.parent = data.parent;
         this.data = data.data;
         this.parent = data.parent;
-        this.authorized = data.authorized;
+        this.authorization = data.authorization;
         this.run = data.run;
     }
 

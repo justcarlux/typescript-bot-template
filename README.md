@@ -14,7 +14,9 @@ Discord.js bot template made in TypeScript with minimal dependencies.
 - Configuration loader.
 - Exception catcher (informally known as "anti-crash").
 - Built-in reload and eval command.
-- Built-in command for refreshing Slash Commands and also an option for refreshing them every time the bot joins a new guild.
+- Built-in command for refreshing Slash Commands, an option for refreshing them every time the bot joins a new guild and when it starts.
+- Custom console logger (with output file).
+- Custom presence/status controller.
 - Examples of everything above.
 
 ## 💻 Running

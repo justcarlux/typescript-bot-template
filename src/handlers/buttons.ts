@@ -1,19 +1,14 @@
-import { ButtonInteraction, Collection } from "discord.js";
+import { ButtonInteraction } from "discord.js";
 import Bot from "../structures/Bot";
-import logger from "../utils/logger";
 import { getConfig } from "../utils/configuration";
+import logger from "../utils/logger";
 import { checkChannelRunnability } from "./util";
-
-const cooldowns = new Collection<string, number>();
 
 export default async (client: Bot, interaction: ButtonInteraction) => {
 
     if (!checkChannelRunnability(interaction.channelId)) return;
     if (interaction.user.bot) return;
     
-    const cooldownExpiration = cooldowns.get(interaction.user.id);
-    if (cooldownExpiration && Date.now() < cooldownExpiration) return;
-
     const button = client.interactions.buttons.find((button) => {
         return button.name === interaction.customId ||
         (button.useIncludes && interaction.customId.includes(button.name))
@@ -26,7 +21,6 @@ export default async (client: Bot, interaction: ButtonInteraction) => {
             color: "cyan", ignore: !getConfig().enable.buttonInteractionLogs, category: "Button Interactions"
         });
     }
-    cooldowns.set(interaction.user.id, Date.now() + 1_000); // This is for avoiding double interactions
     return await button.run(client, interaction);
 
 }

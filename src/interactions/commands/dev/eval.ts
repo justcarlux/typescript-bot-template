@@ -4,6 +4,8 @@ import { getConfig } from "../../../utils/configuration";
 import logger from "../../../utils/logger";
 import { stringifyAny } from "../../../utils/string-related";
 import SlashCommand from "../../../structures/modules/interactions/SlashCommand";
+import { authorizations } from "../../../utils/constants";
+import { isPromise } from "util/types";
 
 const data = new SlashCommandBuilder()
 .addStringOption(option => 
@@ -18,24 +20,47 @@ const data = new SlashCommandBuilder()
     .setDescription("Reply to this command with an ephemeral message")
     .setRequired(false)
 )
+.addBooleanOption(option => 
+    option
+    .setName("wrap_inside_async_function")
+    .setDescription("Wrap the code inside an asyncronous function")
+    .setRequired(false)
+)
 .setName("eval")
 .setDescription("Evaluate code")
 
 export default new SlashCommand({
     data,
-    developerOnly: true,
+    developer: true,
+    authorization: authorizations.slashCommands.owners,
     async run(client, interaction) {
 
         const code = interaction.options.getString("code", true).trim();
         const ephemeral = interaction.options.getBoolean("ephemeral", false) ?? false;
+        const wrapInsideAsyncFunction = interaction.options.getBoolean("wrap_inside_async_function", false) ?? false;
         await interaction.deferReply({ ephemeral });
 
-        let result;
+        let result: any;
+        let error = false;
         try {
-            result = eval(code);
+            result = await eval(wrapInsideAsyncFunction ? `(async () => ${code})()` : code);
         } catch (err: any) {
-            return await interaction.editReply({
-                content: `Error:\n\n**${escapeMarkdown(err?.stack ?? err)}**`
+            result = err?.toString() ?? err;
+            error = true;
+        }
+
+        if (isPromise(result)) {
+            await new Promise<void>((resolve, reject) => {
+                result
+                .then((value: any) => {
+                    result = value;
+                    resolve();
+                })
+                .catch(reject)
+            })
+            .catch((err) => {
+                result = err?.toString() ?? err;
+                error = true;
             });
         }
 
@@ -50,7 +75,7 @@ export default new SlashCommand({
             },
             {
                 name: "Datatype:",
-                value: codeBlock("js", typeof result)
+                value: codeBlock("js", error ? "error" : typeof result)
             }
         ])
 
@@ -63,4 +88,4 @@ export default new SlashCommand({
         return await interaction.editReply({ embeds: [embed] });
 
     }
-})
+});

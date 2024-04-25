@@ -1,21 +1,15 @@
-import { Message } from "discord.js";
+import { BaseMessageOptions, Message } from "discord.js";
 import { getConfig } from "../../utils/configuration";
 import Bot from "../Bot";
+import CommandAuthorization from "./authorizations/CommandAuthorization";
 
 export interface CommandData {
     /** Name or identifier for the Command */
     name: string,
     /** Aliases for the Command */
     aliases?: string[],
-    /** Authorized requirements in order for this Command to work */
-    authorized?: {
-        /** Required role IDs */
-        roles?: string[],
-        /** Required user IDs */
-        users?: string[],
-        /** Guild IDs where this Command will only work */
-        guilds?: string[]
-    },
+    /** Authorization check in order for users to be able to run the command */
+    authorization?: CommandAuthorization,
     /** Run function */
     run: (client: Bot, message: Message, args: string[], cmd: string, prefix: string) => void
 }
@@ -25,13 +19,13 @@ export default class Command implements CommandData {
     public name;
     public aliases;
     public run;
-    public authorized;
+    public authorization;
 
     constructor (data: CommandData) {
         this.name = data.name;
         this.aliases = data.aliases ?? [];
         this.run = data.run;
-        this.authorized = data.authorized;
+        this.authorization = data.authorization;
     }
 
     public toString(prefix?: string) {

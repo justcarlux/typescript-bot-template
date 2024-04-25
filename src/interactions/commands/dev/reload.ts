@@ -1,7 +1,8 @@
 import { SlashCommandBuilder } from "discord.js";
 import SlashCommand from "../../../structures/modules/interactions/SlashCommand";
-import * as configuration from "../../../utils/configuration";
+import { loadConfig } from "../../../utils/configuration";
 import logger from "../../../utils/logger";
+import { authorizations } from "../../../utils/constants";
 
 const data = new SlashCommandBuilder()
 .setName("reload")
@@ -9,14 +10,15 @@ const data = new SlashCommandBuilder()
 
 export default new SlashCommand({
     data,
-    developerOnly: true,
+    developer: true,
+    authorization: authorizations.slashCommands.owners,
     async run(client, interaction) {
 
         await interaction.deferReply();
         logger.run(`Reloading bot (command sent by ${interaction.user.tag})...`, { color: "yellow", stringBefore: "\n" });
 
         client.loaded = false;
-        await configuration.loadConfig();
+        loadConfig();
         await client.load();
         client.loaded = true;
 

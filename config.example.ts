@@ -1,17 +1,22 @@
-import { IConfiguration } from "./src/structures/IConfiguration";
+import IConfiguration from "./src/structures/IConfiguration";
 
 const config: IConfiguration = {
     enable: {
         commandsLogs: false,
+        commandExecutionTimeLogs: false,
         slashCommandsLogs: false,
+        slashCommandExecutionTimeLogs: false,
         buttonInteractionLogs: false,
         menuInteractionLogs: false,
         modalInteractionLogs: false,
         slashCommandsAutocompletionLogs: false,
         discordApiLogging: false,
-        refreshSlashCommandsOnNewGuild: false
+        refreshSlashCommandsOnStart: false,
+        refreshSlashCommandsOnNewGuild: false,
+        presence: false,
+        presenceLogs: true
     },
-    developers: [],
+    owners: [],
     prefixes: [],
     developmentMode: {
         enabled: false,
@@ -23,6 +28,10 @@ const config: IConfiguration = {
             enabled: false,
             raw: false
         }
+    },
+    presence: {
+        interval: 0,
+        list: []
     }
 }
 

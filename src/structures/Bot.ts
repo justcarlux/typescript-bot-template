@@ -13,8 +13,9 @@ import Menu from "./modules/interactions/Menu";
 import Modal from "./modules/interactions/Modal";
 import SlashCommand from "./modules/interactions/SlashCommand";
 import SlashCommandSubCommand from "./modules/interactions/SlashCommandSubCommand";
+import PresenceController from "./controllers/PresenceController";
 
-class Bot extends Client {
+export default class Bot extends Client {
 
     public commands = new Collection<string, Command>();
     public interactions = {
@@ -26,10 +27,13 @@ class Bot extends Client {
         modals: new Collection<string, Modal>()
     }
     public events: (ClientEvent<keyof ClientEvents> | RestEvent<keyof RestEvents>)[] = [];
-    public developers: User[] = [];
+    public owners: User[] = [];
     public createdAt;
     public startedAt: number = 0;
     public developmentMode!: { guild: Guild, channels: GuildBasedChannel[], enabled: boolean };
+    public controllers = {
+        presence: new PresenceController(this)
+    }
 
     private _loaded: boolean = false;
 
@@ -55,6 +59,12 @@ class Bot extends Client {
             partials: [Partials.Message, Partials.Reaction, Partials.Channel],
             allowedMentions: { repliedUser: false, parse: ['users'] },
         });
+        if (!process.env.BOT_TOKEN?.trim()) {
+            logger.run(`BOT_TOKEN is not specified in the .env file`, {
+                color: "red", category: "Fatal"
+            });
+            process.exit();
+        }
         this.createdAt = Date.now();
         this.rest.setToken(process.env.BOT_TOKEN);
     }
@@ -107,7 +117,7 @@ class Bot extends Client {
             color: "blue", category: "Bot"
         });
 
-        await this.loadDevelopers();        
+        await this.loadOwners();        
         await this.loadDeveloperModeData();
 
     }
@@ -210,10 +220,10 @@ class Bot extends Client {
 
     }
 
-    private async loadDevelopers() {
+    private async loadOwners() {
 
-        const developers = (await Promise.all(
-            getConfig().developers.map(async (id) => {
+        const owners = (await Promise.all(
+            getConfig().owners.map(async (id) => {
                 let user: User | null = null;
                 try {
                     user = await this.users.fetch(id);
@@ -222,10 +232,10 @@ class Bot extends Client {
             })
         )).filter((e) => e) as User[];
 
-        const missingDevelopers = getConfig().developers.filter(e => !developers.some(u => u.id === e));
-        if (missingDevelopers.length) {
+        const missingOwners = getConfig().owners.filter(e => !owners.some(u => u.id === e));
+        if (missingOwners.length) {
             logger.run(
-                `The following developer user IDs were not found: ${missingDevelopers.join(", ")}`,
+                `The following owner user IDs were not found: ${missingOwners.join(", ")}`,
                 { color: "red", category: "Fatal" }
             );
             logger.run(
@@ -235,9 +245,9 @@ class Bot extends Client {
             process.exit();
         }
 
-        this.developers = developers;
+        this.owners = owners;
 
-        logger.run(`Loaded developers: ${this.developers.map(e => e.tag).join(", ") || "None"}`, {
+        logger.run(`Loaded owners: ${this.owners.map(e => `${e.tag} (ID: ${e.id})`).join(", ") || "None"}`, {
             color: "blue", category: "Bot"
         });
 
@@ -294,7 +304,7 @@ class Bot extends Client {
     private async refreshGlobalSlashCommands() {
         if (!this.isReady()) throw new Error("Bot isn't ready yet");
         const globalSlashCommands = this.interactions.commands
-        .filter(e => !e.developerOnly)
+        .filter(e => !e.developer)
         .map(e => e.data.toJSON());
         if (!globalSlashCommands.length) {
             return logger.run(`Nothing to register\n`, {
@@ -314,7 +324,7 @@ class Bot extends Client {
     private async refreshDeveloperSlashCommands() {
         if (!this.isReady()) throw new Error("Bot isn't ready yet");
         const developerSlashCommands = this.interactions.commands
-        .filter(e => e.developerOnly)
+        .filter(e => e.developer)
         .map(e => e.data.toJSON());
         if (!developerSlashCommands.length) {
             return logger.run(`Nothing to register\n`, {
@@ -325,7 +335,7 @@ class Bot extends Client {
             color: "blue", stringBefore: "\n", ignore: !getConfig().enable.slashCommandsLogs, category: "Developer Slash Commands Refresh"
         });
         const data = await this.rest.put(Routes.applicationGuildCommands(this.user.id, this.developmentMode.guild.id), { body: developerSlashCommands }) as RESTPostAPIApplicationGuildCommandsJSONBody[];
-        logger.run(`Succesfully registered ${data.length} of them in "${this.developmentMode.guild.id}" (ID: ${this.developmentMode.guild.id})`, {
+        logger.run(`Succesfully registered ${data.length} of them in "${this.developmentMode.guild.name}" (ID: ${this.developmentMode.guild.id})\n`, {
             color: "blue", ignore: !getConfig().enable.slashCommandsLogs, category: "Developer Slash Commands Refresh"
         });
     }
@@ -346,14 +356,14 @@ class Bot extends Client {
                         let cachedSubCommand: SlashCommandSubCommand | undefined;
                         switch (subcommand.type) {
                             case ApplicationCommandOptionType.Subcommand:
-                                cachedSubCommand = this.interactions.subcommands.find(e => e.data.name === subcommand.name);
+                                cachedSubCommand = this.interactions.subcommands.find(e => e.data.name === subcommand.name && e.parent.command === cachedCommand?.data.name);
                                 if (cachedSubCommand && cachedCommand) cachedSubCommand.id = cachedCommand.id;
                                 break;
                         
                             case ApplicationCommandOptionType.SubcommandGroup:
                                 subcommand.options?.forEach(groupSubcommand => {
                                     if (groupSubcommand.type !== ApplicationCommandOptionType.Subcommand) return;
-                                    cachedSubCommand = this.interactions.subcommands.find(e => e.data.name === groupSubcommand.name);
+                                    cachedSubCommand = this.interactions.subcommands.find(e => e.data.name === groupSubcommand.name && e.parent.command === cachedCommand?.data.name);
                                     if (cachedSubCommand && cachedCommand) cachedSubCommand.id = cachedCommand.id;
                                 });
                                 break;
@@ -365,5 +375,3 @@ class Bot extends Client {
     }
 
 }
-
-export default Bot;

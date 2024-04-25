@@ -26,3 +26,25 @@ export function cut(text: string, maxLength: number, endString: string = "...") 
     if (text.length > maxLength) return text.substring(0, maxLength) + endString;
     return text;
 }
+
+export function parseVariables(text: string, variables: any) {
+
+    if (!variables || !Object.keys(variables).length) return text;
+
+    let matches = Array.from(text.matchAll(/\<[a-zA-Z0-9._-]+\>/g), e => e[0]);
+    if (!matches.length) return text;
+    
+    matches = matches.map(e => { return e.replace(/<|>/g, ""); })
+
+    return text.split(/\<[a-zA-Z0-9._-]+\>/g).map((str, index) => {
+        if (index === matches.length) return str;
+        return str + (variables[matches[index]] ?? `<${matches[index]}>`);
+    }).join("");
+
+}
+
+export function escapeForJSON(text: string) {
+    if (!text) return '';
+    const stringified = JSON.stringify(text.toString());
+    return stringified.slice(1, stringified.length - 1);
+}
