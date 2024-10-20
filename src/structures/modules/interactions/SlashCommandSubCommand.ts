@@ -4,24 +4,23 @@ import SlashCommandAuthorization from "../authorizations/SlashCommandAuthorizati
 
 export interface SlashCommandSubCommandData {
     /** Custom identifier for the Command to avoid name clashes */
-    name?: string,
+    name: string;
     /** Parent Command information */
     parent: {
         /** Parent Command where this Subcommand belongs to */
-        command: string,
+        command: string;
         /** Parent Subcommand group where this Subcommand belongs to */
-        group?: string
-    },
+        group?: string;
+    };
     /** Authorization check in order for users to be able to run the command */
-    authorization?: SlashCommandAuthorization,
+    authorization?: SlashCommandAuthorization;
     /** Slash Command Subcommand Data */
-    data: SlashCommandSubcommandBuilder,
+    data: SlashCommandSubcommandBuilder;
     /** Run function */
-    run: (client: Bot, interaction: ChatInputCommandInteraction) => void
+    run: (client: Bot, interaction: ChatInputCommandInteraction) => void;
 }
 
 export default class SlashCommandSubCommand implements SlashCommandSubCommandData {
-
     public name;
     public data;
     public run;
@@ -29,7 +28,7 @@ export default class SlashCommandSubCommand implements SlashCommandSubCommandDat
     public authorization;
     private _id = "";
 
-    constructor (data: SlashCommandSubCommandData) {
+    constructor(data: SlashCommandSubCommandData) {
         this.name = data.name;
         this.parent = data.parent;
         this.data = data.data;
@@ -41,15 +40,14 @@ export default class SlashCommandSubCommand implements SlashCommandSubCommandDat
     public get id() {
         return this._id;
     }
-    
+
     public set id(x: string) {
         this._id = x;
     }
 
     public toString() {
-        return this._id ?
-        `</${this.parent.command || ""}${this.parent.group ? ` ${this.parent.group}` : ""} ${this.data.name || ""}:${this._id}>` :
-        `/${this.parent.command || ""}${this.parent.group ? ` ${this.parent.group}` : ""} ${this.data.name || ""}`;
+        return this._id
+            ? `</${this.parent.command || ""}${this.parent.group ? ` ${this.parent.group}` : ""} ${this.data.name || ""}:${this._id}>`
+            : `/${this.parent.command || ""}${this.parent.group ? ` ${this.parent.group}` : ""} ${this.data.name || ""}`;
     }
-    
 }

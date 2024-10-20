@@ -4,19 +4,18 @@ import SlashCommandAuthorization from "../authorizations/SlashCommandAuthorizati
 
 export interface SlashCommandData {
     /** Custom identifier for the Slash Command to avoid name clashes */
-    name?: string,
+    name: string;
     /** Slash Command data */
-    data: SlashCommandBuilder,
+    data: SlashCommandBuilder;
     /** Authorization check in order for users to be able to run the command */
-    authorization?: SlashCommandAuthorization,
+    authorization?: SlashCommandAuthorization;
     /** If this is a Slash Command that's only going to be registered in development guilds */
-    developer?: boolean,
+    developer?: boolean;
     /** Run function */
-    run: (client: Bot, interaction: ChatInputCommandInteraction) => void
+    run: (client: Bot, interaction: ChatInputCommandInteraction) => void;
 }
 
 export default class SlashCommand implements SlashCommandData {
-
     public name;
     public data;
     public authorization;
@@ -24,7 +23,7 @@ export default class SlashCommand implements SlashCommandData {
     public run;
     private _id = "";
 
-    constructor (data: SlashCommandData) {
+    constructor(data: SlashCommandData) {
         this.name = data.name;
         this.data = data.data;
         this.developer = data.developer ?? false;
@@ -35,15 +34,12 @@ export default class SlashCommand implements SlashCommandData {
     public get id() {
         return this._id;
     }
-    
+
     public set id(x: string) {
         this._id = x;
     }
-    
-    public toString() {
-        return this._id ? 
-        `</${this.data.name || ""}:${this._id}>` :
-        `/${this.data.name}`;
-    }
 
+    public toString() {
+        return this._id ? `</${this.data.name || ""}:${this._id}>` : `/${this.data.name}`;
+    }
 }

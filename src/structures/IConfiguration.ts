@@ -1,66 +1,68 @@
-import { PresenceData } from "discord.js"
+import { PresenceData } from "discord.js";
 
 export default interface IConfiguration {
     /** Enable certain bot modules */
     enable: {
         /** Command logging */
-        commandsLogs: boolean,
+        commandsLogs: boolean;
         /** Command execution time logging */
-        commandExecutionTimeLogs: boolean,
+        commandExecutionTimeLogs: boolean;
         /** Slash Commands logging */
-        slashCommandsLogs: boolean,
+        slashCommandsLogs: boolean;
         /** Slash Command execution time logging */
-        slashCommandExecutionTimeLogs: boolean,
+        slashCommandExecutionTimeLogs: boolean;
         /** Button interaction logging */
-        buttonInteractionLogs: boolean,
+        buttonInteractionLogs: boolean;
         /** Menu interaction logging */
-        menuInteractionLogs: boolean,
+        menuInteractionLogs: boolean;
         /** Modal interaction logging */
-        modalInteractionLogs: boolean,
+        modalInteractionLogs: boolean;
         /** Slash Commands Autocompletion logging */
-        slashCommandsAutocompletionLogs: boolean,
+        slashCommandsAutocompletionLogs: boolean;
         /** Discord API requests logging */
-        discordApiLogging: boolean,
+        discordApiLogging: boolean;
         /** Refresh all Slash Commands when starting the bot */
-        refreshSlashCommandsOnStart: boolean,
+        refreshSlashCommandsOnStart: boolean;
         /** Refresh all Slash Commands when joining a new guild */
-        refreshSlashCommandsOnNewGuild: boolean,
+        refreshSlashCommandsOnNewGuild: boolean;
         /** Presence controller */
-        presence: boolean,
+        presence: boolean;
         /** Show a log when the presence changes */
-        presenceLogs: boolean
-    },
+        presenceLogs: boolean;
+    };
     /** List of owners with all permissions on the bot */
-    owners: string[],
+    owners: string[];
     /** Prefixes for text commands */
-    prefixes: string[],
+    prefixes: string[];
+    /** Allow users to mention the bot for running text commands */
+    allowBotMentionAsPrefix: boolean;
     /** Development mode is a mode that disables the bot functionality (commands, buttons, menus, etc) globally, and only enables it for certain channels in a certain guild */
     developmentMode: {
         /** If the mode is enabled */
-        enabled: boolean,
+        enabled: boolean;
         /** Development mode channels */
-        channels: string[],
+        channels: string[];
         /** Development guild information */
         guild: {
             /** Development guild ID */
-            id: string
-        }
-    },
+            id: string;
+        };
+    };
     /** Custom logger options */
     logger: {
-        /** Logger `output.log` file options */
-        outputFile: {
-            /** If this file will have the console output */
-            enabled: boolean,
-            /** If the file will contain raw output (if false, the output will be clean) */
-            raw: boolean
-        }
-    },
+        /** Logger output files options */
+        output: {
+            /** If the output files functionality is enabled */
+            enabled: boolean;
+            /** If the files will contain raw output (if false, the output will be clean) */
+            raw: boolean;
+        };
+    };
     /** Presence controller options */
     presence: {
         /** Interval (in milliseconds) in which the presence will change */
-        interval: number,
+        interval: number;
         /** List of possible presences. Available variables (within <>): serverCount */
-        list: PresenceData[]
-    }
+        list: PresenceData[];
+    };
 }

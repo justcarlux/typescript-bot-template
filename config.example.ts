@@ -18,13 +18,14 @@ const config: IConfiguration = {
     },
     owners: [],
     prefixes: [],
+    allowBotMentionAsPrefix: false,
     developmentMode: {
         enabled: false,
         channels: [],
         guild: { id: "" }
     },
     logger: {
-        outputFile: {
+        output: {
             enabled: false,
             raw: false
         }
@@ -33,6 +34,6 @@ const config: IConfiguration = {
         interval: 0,
         list: []
     }
-}
+};
 
 export default config;

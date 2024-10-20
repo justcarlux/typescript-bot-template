@@ -1,12 +1,8 @@
-import { ChatInputCommandInteraction, InteractionReplyOptions, MessagePayload } from "discord.js";
+import { ChatInputCommandInteraction } from "discord.js";
+import SlashCommandAuthorizationResult from "./SlashCommandAuthorizationResult";
 
-type SlashCommandAuthorization = (context: ChatInputCommandInteraction) =>
-{
-    authorized: boolean,
-    /**
-     * This payload will be sent when `authorized` is false. If you leave it empty, the command will not answer with anything
-     */
-    payload?: InteractionReplyOptions | MessagePayload
-};
+type SlashCommandAuthorization = (
+    context: ChatInputCommandInteraction
+) => Promise<SlashCommandAuthorizationResult>;
 
 export default SlashCommandAuthorization;

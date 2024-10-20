@@ -1,12 +1,6 @@
-import { Message, MessagePayload, MessageReplyOptions } from "discord.js";
+import { Message } from "discord.js";
+import CommandAuthorizationResult from "./CommandAuthorizationResult";
 
-type CommandAuthorization = (context: Message) =>
-{
-    authorized: boolean,
-    /**
-     * This payload will be sent when `authorized` is false. If you leave it empty, the command will not answer with anything
-     */
-    payload?: MessagePayload | MessageReplyOptions
-};
+type CommandAuthorization = (context: Message) => Promise<CommandAuthorizationResult>;
 
 export default CommandAuthorization;

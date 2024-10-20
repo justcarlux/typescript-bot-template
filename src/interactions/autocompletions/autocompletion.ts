@@ -1,12 +1,12 @@
 import { ApplicationCommandOptionChoiceData } from "discord.js";
 import Autocompletion from "../../structures/modules/interactions/Autocompletion";
+import authorizations from "../../authorizations";
 
 export default new Autocompletion({
     name: "autocompletion",
-    for: [
-        { name: "command3", focusedOption: "option" }
-    ],
-    async run(client, interaction) {
+    for: [{ name: "command3", focusedOption: "option" }],
+    authorization: authorizations.owners.autocompletion,
+    async run(_, interaction) {
         const items: ApplicationCommandOptionChoiceData[] = [
             { name: "Autocompletion Option 1", value: "option1" },
             { name: "Autocompletion Option 2", value: "option2" },
@@ -17,12 +17,14 @@ export default new Autocompletion({
             { name: "Autocompletion Option 7", value: "option7" },
             { name: "Autocompletion Option 8", value: "option8" },
             { name: "Autocompletion Option 9", value: "option9" },
-            { name: "Autocompletion Option 10", value: "option10" },
-        ]
+            { name: "Autocompletion Option 10", value: "option10" }
+        ];
         return await interaction.respond(
             items.filter(e => {
-                return e.name.toLowerCase().includes(interaction.options.getFocused(false).toLowerCase())
+                return e.name
+                    .toLowerCase()
+                    .includes(interaction.options.getFocused(false).toLowerCase());
             })
-        )
-    },
-})
+        );
+    }
+});

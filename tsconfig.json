@@ -6,7 +6,13 @@
         "outDir": "dist",
         "resolveJsonModule": true,
         "esModuleInterop": true,
-        "strict": true
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitOverride": true
     },
-    "include": ["src/**/*", "src/types/process-env.d.ts"]
+    "include": [
+        "src/**/*",
+        "src/types/process-env.d.ts"
+    ]
 }

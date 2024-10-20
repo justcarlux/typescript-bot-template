@@ -2,11 +2,16 @@ import { Dirent } from "fs";
 import { readdir } from "fs/promises";
 import path from "path";
 
-export interface DirectoryWalkerEntry { path: string, data: Dirent }
+export interface DirectoryWalkerEntry {
+    path: string;
+    data: Dirent;
+}
 
-export async function directoryWalker(directoryPath: string): Promise<DirectoryWalkerEntry[]> {
+export async function directoryWalker(
+    directoryPath: string
+): Promise<DirectoryWalkerEntry[]> {
     const result: DirectoryWalkerEntry[] = [];
-    const entries = (await readdir(directoryPath, { withFileTypes: true }))
+    const entries = await readdir(directoryPath, { withFileTypes: true });
     for (const index in entries) {
         const entry = entries[index];
         if (entry.isDirectory()) {

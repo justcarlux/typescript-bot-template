@@ -3,9 +3,9 @@ import uncacheModule from "./uncache-module";
 import IConfiguration from "../structures/IConfiguration";
 import "../../config";
 
-const filePath = process.argv.join("").includes("ts-node") ?
-path.join(process.cwd(), "config") : 
-path.join(process.cwd(), "dist", "config");
+const filePath = process.argv.join("").includes("ts-node")
+    ? path.join(process.cwd(), "config")
+    : path.join(process.cwd(), "dist", "config");
 
 let data: IConfiguration | null = null;
 

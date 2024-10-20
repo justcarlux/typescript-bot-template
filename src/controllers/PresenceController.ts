@@ -1,11 +1,10 @@
 import { PresenceData } from "discord.js";
-import { getConfig } from "../../utils/configuration";
-import { parseVariables } from "../../utils/json-related";
-import logger from "../../utils/logger";
-import Bot from "../Bot";
+import { getConfig } from "../utils/configuration";
+import { parseVariables } from "../utils/json-related";
+import logger from "../utils/logger";
+import Bot from "../structures/Bot";
 
 export default class PresenceController {
-
     private client: Bot;
     public constructor(client: Bot) {
         this.client = client;
@@ -33,10 +32,15 @@ export default class PresenceController {
         }) as PresenceData;
         this.client.user?.setPresence(presence);
         logger.run(`Changed to index ${index}:`, {
-            color: "cyan", ignore: !getConfig().enable.presenceLogs, category: "Presence", stringBefore: "\n"
+            color: "cyan",
+            ignore: !getConfig().enable.presenceLogs,
+            scope: "Presence",
+            stringBefore: "\n"
         });
         logger.run(`${JSON.stringify(presence)}\n`, {
-            color: "cyan", ignore: !getConfig().enable.presenceLogs, category: "Presence"
+            color: "cyan",
+            ignore: !getConfig().enable.presenceLogs,
+            scope: "Presence"
         });
     }
 
@@ -49,5 +53,4 @@ export default class PresenceController {
     public stop() {
         if (this.intervalId) clearInterval(this.intervalId);
     }
-
 }

@@ -1,17 +1,16 @@
 import { RestEvents } from "discord.js";
 import Bot from "../../Bot";
 
-export interface RestEventData <E extends keyof RestEvents>{
+export interface RestEventData<E extends keyof RestEvents> {
     /** Name or identifier for the Rest Event */
-    name: E,
+    name: E;
     /** If this Rest Event is going to be listened once */
-    once?: boolean,
+    once?: boolean;
     /** Run function */
-    run: (client: Bot, ...args: RestEvents[E]) => void
+    run: (client: Bot, ...args: RestEvents[E]) => void;
 }
 
 export default class RestEvent<E extends keyof RestEvents> implements RestEventData<E> {
-
     public name;
     public once;
     public run;
@@ -21,5 +20,4 @@ export default class RestEvent<E extends keyof RestEvents> implements RestEventD
         this.once = data.once ?? false;
         this.run = data.run;
     }
-    
 }

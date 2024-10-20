@@ -11,14 +11,18 @@ import "./utils/exception-catchers";
 import logger from "./utils/logger";
 
 (async () => {
-
-    logger.run(getConfig().developmentMode.enabled ? `Starting in Developer Mode...` : `Starting...`, {
-        color: "green", category: "Bot"
-    });
+    logger.run(
+        getConfig().developmentMode.enabled
+            ? `Starting in Developer Mode...`
+            : `Starting...`,
+        {
+            color: "green",
+            scope: "Bot"
+        }
+    );
 
     await bot.load();
     await bot.start();
-
 })();
 
 export default bot;
