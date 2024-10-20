@@ -1,5 +1,5 @@
-config.ts
-node_modules
-.env
-dist
-output.log
+/config.ts
+/node_modules
+/.env
+/dist
+/logs
